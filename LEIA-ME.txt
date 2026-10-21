@@ -1,0 +1,106 @@
+INFRAQUEST 2.0 - REINOS DO CEU
+
+COMO JOGAR
+1. Extraia o ZIP em uma pasta.
+2. Abra INICIAR-JOGO.cmd. E necessario Node.js 24 ou superior (https://nodejs.org).
+3. Acesse http://127.0.0.1:4180. Mantenha a janela do servidor aberta.
+4. Crie uma conta com usuario, email e senha de pelo menos 12 caracteres.
+5. De um nome ao personagem e escolha pele, olhos, cabelo, roupa, sapatos e acessorios.
+6. Escolha um dos seis mundos. Use WASD/setas e E, ou clique nos personagens.
+
+PERSONAGENS
+Dezoito roupas, oito cabelos, seis sapatos, dez tons de pele, dez cores de cabelo,
+seis cores de olhos, seis opcoes de chapeu, quatro de brinco, quatro de colar,
+tres de oculos e tres opcoes de bolsa/mochila. Catalogo gratuito: pontos ficam para os premios.
+Proporcoes chibi com roupas casuais, cloud e tecnologia; orelhas arredondadas.
+Camiseta Cloud, moletom Dev, jaqueta Cloud Ops, techwear, macacao, camisa casual,
+blazer e corta-vento. Gorro de la, bone, boina, headset e capuz como acessorios.
+
+MUNDOS E PROGRESSAO
+Planeta Raios: Linux e sistemas.
+Aurora Celeste: Windows e fundamentos.
+Clouds: cloud e computacao.
+Mist Valley: redes e armazenamento.
+Nimbus Citadel: IAM e seguranca.
+Storm Haven: resiliencia e operacoes.
+20 fases unicas em cada reino. Cada acerto inedito concede 25 pontos e 100 XP.
+Cada 300 XP aumenta o nivel. Total possivel: 3.000 pontos e 12.000 XP.
+Revisoes nao geram pontos extras. A correcao e o saldo sao calculados no servidor.
+
+PREMIOS REAIS COM APROVACAO
+300 pontos: garrafa de agua (12 fases).
+500 pontos: lanche completo por conta da casa (20 fases).
+2.000 pontos: day off (80 fases).
+Os tres juntos custam 2.800 pontos, equivalentes a 112 fases.
+Solicitacoes ficam pendentes e reservam os pontos. Recusa ou cancelamento devolve
+o saldo. Cada premio tem no maximo uma solicitacao ativa por conta.
+O administrador aprova/recusa e registra a entrega ou concessao efetiva.
+O jogo nao compra produtos, agenda folgas nem comunica RH automaticamente.
+A organizacao precisa combinar disponibilidade, retirada e regras do day off.
+
+ADMINISTRADOR
+Cadastre primeiro a conta que administrara os premios.
+Abra CONFIGURAR-ADMIN.cmd e informe seu usuario.
+Entre novamente no jogo: a aba Admin estara disponivel.
+Somente uma pessoa com acesso aos arquivos locais pode promover administradores.
+Alternativa por terminal: node admin.mjs grant nome-do-usuario
+Revogar: node admin.mjs revoke nome-do-usuario
+Decisoes e alteracoes de permissao sao registradas no banco.
+
+CONTAS E DADOS
+O banco e criado em data/infraquest.sqlite; nao apague essa pasta para preservar contas.
+Senhas usam scrypt com salt individual; cookies de sessao sao HttpOnly.
+Sessao expira em 8 horas. Cada conta tem seu progresso e saldo separados.
+O email e um identificador, nao e confirmado por email nesta versao.
+Recuperacao de senha e envio de emails ainda nao foram configurados.
+Faca backup consistente do banco (com o servidor parado ou ferramenta SQLite apropriada).
+
+SSO E HOSPEDAGEM
+Login por email/senha funciona localmente. SSO AWS IAM Identity Center e Microsoft
+necessitam cadastro de aplicativo e configuracao real dos respectivos provedores.
+Leia CONFIGURAR-SSO.txt. Nenhum botao simula autenticacao corporativa.
+O adaptador SAML opcional precisa da dependencia Node SAML instalada.
+Nao publique esta pasta como site estatico: contas e premios exigem o servidor.
+Para uso compartilhado, hospede o app Node atras de um proxy HTTPS, preserve o
+cabecalho Host, defina APP_ORIGIN para o dominio e PORT para a porta interna,
+instale/configure a federacao e atribua acessos no provedor corporativo.
+O servidor escuta apenas em 127.0.0.1 por padrao; o proxy deve estar no mesmo host.
+Para premios de empresa, restrinja tambem o ingresso a colaboradores no ambiente publicado.
+
+TESTES
+node tests/app.test.mjs
+O teste usa banco temporario, sem criar contas de demonstracao no seu banco.
+
+
+NOVIDADES 3.0 - COMPANHIA E EXPLORACAO
+Na entrada, escolha jogar contra Mimo ou entrar em uma sala online.
+Mimo responde sozinho no ritmo escolhido; o primeiro a 250 pontos da partida vence.
+O placar da partida nao cria pontos extras para resgatar premios.
+Crie quantas salas independentes precisar (uma sala ativa por conta).
+Compartilhe o ID de oito caracteres com os amigos; cada sala aceita ate 8 pessoas.
+Posicoes, avatares e placar sao atualizados pelo servidor. O anfitriao escolhe o
+planeta do time; ao sair, a funcao passa para a proxima pessoa da sala.
+Cada jogador mantem sua propria campanha e saldo de premios.
+
+Agora cada pergunta aparece em um portal na ilha. Apos acertar, volte ao mapa:
+Luma, o espirito das nuvens, comenta a descoberta. Fale com ela (E ou clique),
+colecione tres fragmentos luminosos e brinque de pular (Espaco ou botao na tela).
+Quando os fragmentos se unem, outro portal aparece. Clique para caminhar ate ele.
+O jogador nao e levado diretamente de uma pergunta para a seguinte.
+
+O editor permite modelos feminino e masculino. Todo o catalogo esta disponivel
+para os dois: 18 roupas, incluindo vestido Cloud, jardineira, saia plissada,
+wide leg, blazer rose, conjunto esportivo, chemise marsala e outros looks.
+A paleta dos mapas e da interface usa rosa pastel, malva e detalhes marsala.
+
+JOGAR EM OUTROS COMPUTADORES
+O ID de sala funciona dentro de um mesmo servidor. Para jogar entre dispositivos,
+use uma hospedagem Node compartilhada ou uma rede local configurada. Nao houve
+publicacao na internet nesta entrega. No arquivo .env, por exemplo, para uma rede
+local sob sua administracao: HOST=0.0.0.0, PORT=4180 e
+APP_ORIGIN=http://IP-DO-COMPUTADOR:4180. Todos acessam esse mesmo endereco.
+A liberacao de firewall e a hospedagem dependem do ambiente. Na internet, use
+HTTPS, dominio comum a todos e proxy conforme CONFIGURAR-SSO.txt.
+SSO permanece sem conexao, conforme solicitado.
+
+Testes adicionais: node tests/rooms.test.mjs

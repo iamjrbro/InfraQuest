@@ -1,0 +1,54 @@
+SSO - DADOS QUE FALTAM PARA ATIVACAO
+
+AWS IAM IDENTITY CENTER (SEU PROVEDOR)
+O aplicativo suporta federacao SAML 2.0 iniciada pelo proprio jogo.
+Ainda nao ha metadados da sua organizacao nem aplicativo cadastrado neste pacote.
+O login corporativo nao foi testado com seu tenant e fica indisponivel ate configuracao.
+
+1. Publique o servidor Node em uma URL HTTPS e defina APP_ORIGIN no .env.
+   PORT e a porta interna do servidor (4180 por padrao), nao a porta publica HTTPS.
+2. No IAM Identity Center, adicione um aplicativo SAML 2.0 gerenciado pelo cliente.
+3. Defina os endpoints do jogo usando SEU dominio HTTPS:
+   Application ACS URL: https://SEU-DOMINIO/auth/identity-center/callback
+   Application SAML audience / SP Entity ID: https://SEU-DOMINIO/auth/identity-center/metadata
+   Application start URL: https://SEU-DOMINIO/auth/identity-center/start
+4. Mapeie Subject para ${user:email}, formato emailAddress. Opcional: displayName.
+   O identificador deve ser estavel; mudar NameID cria outra conta no jogo.
+5. Obtenha no Identity Center a URL de SSO, o emissor/Entity ID do IdP e o certificado
+   PUBLICO de assinatura. Nao e necessario fornecer access key ou secret key AWS.
+6. Copie .env.example para .env e preencha AWS_SAML_ENTRY_POINT,
+   AWS_SAML_IDP_ISSUER e AWS_SAML_CERT_FILE. Salve o PEM publico no caminho indicado.
+7. Instale o adaptador: npm install --ignore-scripts
+8. Configure assinatura da resposta E da assercao no IdP; o adaptador exige ambas,
+   audience, expiracao, correlacao InResponseTo e vinculacao ao navegador.
+9. Atribua os usuarios/grupos autorizados ao aplicativo no Identity Center.
+10. Reinicie o servidor e teste com uma conta permitida. Teste tambem negacao de
+    usuario sem atribuicao, expiracao, replay e revogacao antes do uso corporativo.
+
+O fluxo SAML usa cookie temporario SameSite=None; Secure e exige HTTPS.
+Login iniciado pelo portal do IdP sem solicitacao previa do jogo e recusado.
+Nao ha vinculo automatico entre conta local e SSO apenas por coincidencia de email.
+Sair do jogo revoga a sessao local; nao encerra a sessao global no provedor.
+A dependencia opcional usa @node-saml/node-saml 5.1.0 e deve ser mantida atualizada.
+O jogo principal funciona sem instalar a dependencia enquanto SAML nao estiver configurado.
+
+MICROSOFT ENTRA ID
+Cadastre um aplicativo Web no tenant, com retorno:
+https://SEU-DOMINIO/auth/microsoft/callback
+Preencha MICROSOFT_ISSUER (URL com tenant especifico), MICROSOFT_CLIENT_ID
+e, se aplicavel ao aplicativo confidencial, MICROSOFT_CLIENT_SECRET no .env.
+O fluxo e authorization code com PKCE; valida assinatura RS256, emissor, audience,
+nonce e validade. Nao use o endpoint common como emissor desta implementacao.
+Restrinja atribuicao de usuarios no tenant e confirme os claims antes de publicar.
+
+ALTERNATIVA COGNITO
+Tambem ha um adaptador OIDC para Cognito. Se preferir usa-lo como ponte de federacao,
+configure o Identity Center como IdP SAML do user pool e preencha AWS_ISSUER e
+AWS_CLIENT_ID. Retorno OIDC: https://SEU-DOMINIO/auth/aws/callback.
+
+REFERENCIAS OFICIAIS
+https://docs.aws.amazon.com/singlesignon/latest/userguide/customermanagedapps-set-up-your-own-app-saml2.html
+https://docs.aws.amazon.com/singlesignon/latest/userguide/customermanagedapps-saml2-setup.html
+https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc
+https://docs.aws.amazon.com/cognito/latest/developerguide/using-pkce-in-authorization-code.html
+https://github.com/node-saml/node-saml/tree/v5.1.0

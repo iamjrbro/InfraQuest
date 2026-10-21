@@ -1,0 +1,61 @@
+export const catalog={
+ outfit:[['ranger','Camiseta Cloud + jeans','#b1c6d9'],['mage','Moletom Dev','#c5a9cf'],['pilot','Jaqueta Cloud Ops','#a6b9d1'],['knight','Techwear urbano','#795b6a'],['engineer','Macacão de tecnologia','#d3a78c'],['wanderer','Camisa casual','#e7b6c0'],['royal','Blazer + camiseta','#a787a5'],['storm','Corta-vento Storm','#b4c9c4'],['dress','Vestido Cloud rosé','#e3a5be'],['pinafore','Jardineira + camiseta','#cf9bb4'],['pleats','Moletom + saia plissada','#d5bfdc'],['wideleg','Top + calça wide leg','#cc9eb0'],['blushblazer','Blazer rosé + calça','#d89fb2'],['sporty','Conjunto esportivo','#b6bedb'],['sweaterskirt','Suéter + saia midi','#d8b0c1'],['jumpsuit','Macacão pantacourt','#a98197'],['oversized','Camisetão + shorts','#d7bbc9'],['shirtdress','Chemise marsala','#95596f']],
+ hair:[['short','Curto aventureiro'],['bob','Chanel'],['long','Longo'],['braids','Tranças'],['afro','Afro'],['bun','Coque'],['mohawk','Moicano'],['waves','Ondulado']],
+ boots:[['trail','Botas de trabalho'],['tall','Tênis de cano alto'],['sneakers','Tênis casual'],['armored','Tênis tech chunky'],['sandals','Sandálias'],['cloud','Tênis Cloud']],
+ hat:[['none','Sem acessório'],['pointed','Gorro de lã'],['beret','Boina'],['wizard','Boné Cloud'],['crown','Headset'],['hood','Capuz de moletom']],
+ earring:[['none','Sem brinco'],['hoop','Argolas'],['star','Estrelas'],['stud','Pontos de luz']],
+ necklace:[['none','Sem colar'],['crystal','Cristal'],['moon','Lua'],['key','Chave']],
+ glasses:[['none','Sem óculos'],['round','Óculos redondos'],['goggles','Óculos de aviador']],
+ cape:[['none','Sem bolsa'],['short','Bolsa transversal'],['long','Mochila para notebook']]
+};
+export const palettes={skin:['#f5d4b3','#eac09c','#d8a47d','#c58a64','#ad7150','#915a40','#764630','#5b3528','#42271f','#f5dcd0'],hairColor:['#342c2c','#171e28','#68442f','#a86b37','#e5c46d','#dbe2e9','#b65b59','#6b6dc0','#71afa0','#ed9bc0'],eye:['#4c8e7f','#759ccc','#795242','#b6a15c','#71639e','#2c3445']};
+export const defaultAvatar={name:'',gender:'feminine',skin:'#d8a47d',hairColor:'#68442f',eye:'#4c8e7f',hair:'short',outfit:'ranger',boots:'sneakers',hat:'none',earring:'none',necklace:'none',glasses:'none',cape:'none'};
+// Proporções chibi com figurinos cotidianos e tecnologia. IDs legados preservam escolhas salvas.
+export function drawAvatar(c,x,y,scale,p={},time=0,walk=false){p={...defaultAvatar,...p};c.save();c.translate(x,y);c.scale(scale,scale);const outfit=catalog.outfit.find(o=>o[0]===p.outfit)?.[2]||'#65a87c',skin=p.skin,hair=p.hairColor;let step=walk?Math.sin(time/95)*3:0;
+const ellipse=(x,y,rx,ry,col)=>{c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fillStyle=col;c.fill()};const poly=(a,col)=>{c.beginPath();a.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=col;c.fill()};const line=(x,y,x2,y2,col,w)=>{c.beginPath();c.moveTo(x,y);c.lineTo(x2,y2);c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.stroke()};
+ellipse(0,2,28,8,'#091e2a44');
+if(p.cape==='long'){poly([[-25,-61],[23,-61],[29,-22],[-27,-22]],'#354555');line(-25,-51,-26,-31,'#7899a9',5);line(25,-51,26,-31,'#7899a9',5)}
+if(['long','braids','waves'].includes(p.hair)){ellipse(0,-71,31,38,hair);if(p.hair==='braids'){for(let n=0;n<4;n++){ellipse(-27,-60+n*8,7,7,hair);ellipse(27,-60+n*8,7,7,hair)}}}
+const pants={ranger:'#426c8e',mage:'#364251',pilot:'#384454',knight:'#303a45',engineer:'#7a888a',wanderer:'#d4c3a1',royal:'#414b68',storm:'#334854'}[p.outfit]||'#426c8e';
+const skirts=['dress','pleats','sweaterskirt','shirtdress'].includes(p.outfit),shorts=p.outfit==='oversized',feminine=p.gender==='feminine';
+line(-10,-31,-11,-11+step,skirts||shorts?skin:pants,15);line(10,-31,11,-11-step,skirts||shorts?skin:pants,15);line(-14,-20,-14,-13+step,'#ffffff20',1);line(7,-20,7,-13-step,'#ffffff20',1);
+const bootCol={trail:'#97744f',tall:'#4a576d',sneakers:'#ecece3',armored:'#8495ab',sandals:'#9e7956',cloud:'#d7eceb'}[p.boots]||'#ecece3';
+for(const side of [-1,1]){const offset=side===-1?step:-step;line(side*11,p.boots==='tall'?-18:-11,side*11,-6+offset,p.boots==='sandals'?skin:bootCol,p.boots==='sandals'?11:14);ellipse(side*13,-3+offset,p.boots==='armored'?13:11,6,bootCol);if(p.boots!=='sandals'){line(side*13-7,-1+offset,side*13+7,-1+offset,'#e7ede9',2);line(side*11-3,-8+offset,side*11+3,-8+offset,'#657d8a',1.5)}else{line(side*12-6,-4+offset,side*12+6,-4+offset,'#dcc7a0',3)}if(p.boots==='cloud'){ellipse(side*19,-7+offset,6,4,'#f4fbfa');line(side*13-7,1+offset,side*13+7,1+offset,'#8dbbb5',2)}}
+const longSleeve=['mage','pilot','knight','royal','storm','pleats','blushblazer','sporty','sweaterskirt','shirtdress'].includes(p.outfit);
+line(-20,-56,-28,-35+step,longSleeve?outfit:skin,11);line(20,-56,28,-35-step,longSleeve?outfit:skin,11);ellipse(-29,-31+step,5,5,skin);ellipse(29,-31-step,5,5,skin);
+poly([[-17,-62],[17,-62],[feminine?17:21,-31],[feminine?-17:-21,-31]],outfit);poly([[-17,-62],[0,-57],[-4,-31],[-17,-31]],'#ffffff12');
+poly([[-18,-62],[-9,-57],[-20,-45],[-29,-49]],outfit);poly([[18,-62],[9,-57],[20,-45],[29,-49]],outfit);
+ellipse(0,-61,8,4,'#ecede5');ellipse(0,-63,6,4,skin);
+if(p.outfit==='ranger'){ellipse(0,-47,8,3,'#edf5ed');ellipse(-4,-49,4,4,'#edf5ed');ellipse(3,-51,5,5,'#edf5ed');line(-3,-40,3,-40,'#dcebe6',1.5)}
+if(p.outfit==='mage'){line(-9,-61,-6,-48,'#e6dded',1.5);line(9,-61,6,-48,'#e6dded',1.5);poly([[-12,-40],[12,-40],[14,-34],[-14,-34]],'#7d69a5');line(-7,-54,-3,-51,'#e9e8ef',2);line(-3,-51,-7,-48,'#e9e8ef',2);line(1,-48,7,-48,'#e9e8ef',2)}
+if(['pilot','storm','knight'].includes(p.outfit)){line(0,-60,0,-32,'#d3e4e5',1.5);line(-13,-44,-7,-42,'#b4d9db',1.5);line(8,-42,14,-44,'#b4d9db',1.5);if(p.outfit==='knight'){poly([[7,-57],[17,-54],[16,-45],[7,-47]],'#64788a');line(-20,-36,-25,-37,'#9bcdbb',3)}else if(p.outfit==='pilot'){ellipse(11,-53,4,2,'#c2e4de');ellipse(11,-55,2.5,2.5,'#c2e4de')}else{poly([[8,-57],[5,-50],[9,-50],[6,-45],[14,-53],[10,-53]],'#d3f0ce')}}
+if(p.outfit==='engineer'){poly([[-13,-60],[-8,-60],[-8,-42],[8,-42],[8,-60],[13,-60],[15,-31],[-15,-31]],'#677e83');c.fillStyle='#d2c496';c.fillRect(-7,-47,14,10);line(-4,-46,-4,-42,'#678486',1);line(5,-47,7,-54,'#bfe0de',2)}
+if(p.outfit==='wanderer'){poly([[-8,-62],[0,-56],[-7,-51],[-13,-60]],'#f2d2cd');poly([[8,-62],[0,-56],[7,-51],[13,-60]],'#f2d2cd');line(0,-55,0,-32,'#bd7277',1);for(let i=0;i<3;i++)ellipse(1,-50+i*7,1,1,'#fff0df')}
+if(p.outfit==='royal'){poly([[-9,-62],[0,-56],[9,-62],[9,-32],[-9,-32]],'#eee9dd');poly([[-9,-62],[-16,-60],[-9,-48],[-4,-50],[0,-35]],'#4e638a');poly([[9,-62],[16,-60],[9,-48],[4,-50],[0,-35]],'#4e638a');line(10,-41,16,-41,'#c2d8df',1.5)}
+if(skirts){const midi=['sweaterskirt','shirtdress'].includes(p.outfit),hem=midi?-14:-22;poly([[-15,-41],[15,-41],[28,hem],[-28,hem]],p.outfit==='pleats'?'#a588b3':outfit);if(p.outfit==='pleats')for(let x=-20;x<=20;x+=8)line(x*.65,-39,x,hem,'#eadeea',1);if(p.outfit==='dress'){ellipse(0,-51,6,2,'#f8ecf2');ellipse(-3,-53,3,3,'#f8ecf2');ellipse(2,-55,4,4,'#f8ecf2');line(-15,-40,15,-40,'#b47190',2)}if(p.outfit==='shirtdress'){line(0,-58,0,hem+2,'#e5becd',1);for(let j=0;j<5;j++)ellipse(1,-53+j*7,1,1,'#f8e6df');line(-15,-40,15,-40,'#d5a0b5',2)}if(p.outfit==='sweaterskirt'){poly([[-18,-62],[18,-62],[19,-38],[-19,-38]],'#ead5dc');for(let y=-53;y<-38;y+=5)line(-14,y,14,y,'#d3adb9',1)}}
+if(p.outfit==='pinafore'){poly([[-13,-61],[-8,-61],[-8,-45],[8,-45],[8,-61],[13,-61],[17,-30],[-17,-30]],'#b47b98');poly([[-16,-31],[16,-31],[22,-22],[3,-22],[0,-26],[-3,-22],[-22,-22]],'#b47b98');c.fillStyle='#dfb7ca';c.fillRect(-7,-46,14,9);ellipse(-10,-54,1.5,1.5,'#f7dcbe');ellipse(10,-54,1.5,1.5,'#f7dcbe')}
+if(p.outfit==='wideleg'||p.outfit==='jumpsuit'){const color=p.outfit==='wideleg'?'#b698ac':outfit;poly([[-17,-34],[-1,-34],[-2,-10+step],[-21,-10+step]],color);poly([[1,-34],[17,-34],[21,-10-step],[2,-10-step]],color);line(0,-59,0,-37,'#f3d9e2',1);if(p.outfit==='wideleg')poly([[-18,-62],[18,-62],[15,-43],[-15,-43]],'#f0dbe3')}
+if(p.outfit==='blushblazer'){poly([[-8,-61],[8,-61],[10,-32],[-10,-32]],'#f8eeee');poly([[-9,-61],[-19,-61],[-19,-30],[-4,-30]],outfit);poly([[9,-61],[19,-61],[19,-30],[4,-30]],outfit);line(-9,-57,-4,-45,'#ae6d86',2);line(9,-57,4,-45,'#ae6d86',2)}
+if(p.outfit==='sporty'){line(-20,-56,-27,-36,'#e7e4f0',2);line(20,-56,27,-36,'#e7e4f0',2);line(0,-59,0,-32,'#f9edf3',1.5);line(-17,-30,-16,-13+step,'#e2d6e8',2);line(17,-30,16,-13-step,'#e2d6e8',2)}
+if(p.outfit==='oversized'){poly([[-20,-62],[20,-62],[24,-25],[-24,-25]],outfit);line(-18,-26,18,-26,'#a68198',2);line(-7,-48,7,-48,'#fff7f8',3);line(-2,-53,-2,-43,'#fff7f8',2)}
+line(-18,-31,18,-31,'#182d3c33',2);
+if(p.cape==='long'){line(-17,-61,-13,-32,'#536776',4);line(17,-61,13,-32,'#536776',4)}
+if(p.cape==='short'){line(-17,-61,19,-31,'#35404d',4);poly([[8,-43],[26,-43],[28,-27],[8,-27]],'#526a79');line(11,-39,23,-39,'#9cbdbf',1.5)}
+ellipse(0,-67,10,12,skin);ellipse(-29,-82,6,9,skin);ellipse(29,-82,6,9,skin);ellipse(-30,-81,2.5,5,'#bb807333');ellipse(30,-81,2.5,5,'#bb807333');
+ellipse(0,-87,30,32,skin);ellipse(-19,-77,6,3,'#e99a8d55');ellipse(19,-77,6,3,'#e99a8d55');
+for(const s of [-1,1]){ellipse(s*12,-86,8,10,'#fff7eb');ellipse(s*12,-85,4.5,7,p.eye);ellipse(s*12,-84,2.2,5,'#182b33');ellipse(s*12-1.5,-88,1.8,2.2,'#ffffff');line(s*12-6,-98,s*12+5,-99,hair,2.5)}
+if(feminine){line(-19,-91,-23,-94,'#604250',1.6);line(19,-91,23,-94,'#604250',1.6)}
+line(-4,-68,4,-68,'#875249',1.8);poly([[0,-80],[3,-75],[-1,-75]],'#aa6e5844');
+if(p.hair==='afro'){for(let i=0;i<12;i++){let a=Math.PI+i*Math.PI/11;ellipse(Math.cos(a)*30,-89+Math.sin(a)*31,12,13,hair)}}
+else if(p.hair==='bun'){ellipse(7,-123,17,15,hair);poly([[-29,-93],[-27,-111],[0,-123],[27,-109],[30,-92],[15,-102],[0,-103],[-13,-100]],hair)}
+else if(p.hair==='mohawk'){poly([[-10,-106],[-9,-125],[0,-140],[12,-124],[13,-104],[2,-97]],hair);poly([[-29,-94],[-27,-109],[-20,-110],[-23,-94]],hair);poly([[29,-94],[27,-109],[20,-110],[23,-94]],hair)}
+else{poly([[-31,-87],[-31,-107],[-15,-119],[10,-120],[29,-108],[31,-88],[20,-104],[13,-96],[4,-107],[-7,-96],[-17,-105],[-23,-88]],hair);if(p.hair==='bob'){ellipse(-28,-86,8,21,hair);ellipse(28,-86,8,21,hair)}if(p.hair==='waves'){for(let s of [-1,1]){ellipse(s*28,-86,9,15,hair);ellipse(s*29,-66,10,16,hair)}}}
+if(p.hat==='pointed'){ellipse(0,-114,30,20,'#c4a28f');c.fillStyle='#b28c79';c.fillRect(-31,-113,62,11);for(let i=-23;i<25;i+=8)line(i,-111,i,-105,'#d7baa4',1);c.fillStyle='#dfd4c0';c.fillRect(-5,-111,10,7)}
+if(p.hat==='wizard'){ellipse(0,-111,32,19,'#617b9e');poly([[-31,-109],[28,-109],[42,-100],[8,-99],[-30,-103]],'#435c80');ellipse(0,-118,7,2,'#d5ebe5');ellipse(-3,-120,3,3,'#d5ebe5');ellipse(3,-121,4,4,'#d5ebe5')}
+if(p.hat==='beret'){ellipse(0,-115,34,13,'#b86b6f');line(-27,-108,27,-108,'#864e60',5);line(2,-125,5,-132,'#75435a',3)}
+if(p.hat==='crown'){c.beginPath();c.ellipse(0,-91,35,35,0,Math.PI,Math.PI*2);c.strokeStyle='#34475b';c.lineWidth=6;c.stroke();line(-34,-90,-34,-76,'#51687c',9);line(34,-90,34,-76,'#51687c',9);line(37,-76,27,-65,'#51687c',2);line(27,-65,15,-65,'#51687c',2);ellipse(14,-65,4,2,'#9de5da');line(-37,-86,-37,-79,'#9de5da',2);line(37,-86,37,-79,'#9de5da',2)}
+if(p.hat==='hood'){c.beginPath();c.ellipse(0,-91,35,36,0,Math.PI,Math.PI*2);c.strokeStyle=outfit;c.lineWidth=11;c.stroke();line(-35,-91,-29,-65,outfit,10);line(35,-91,29,-65,outfit,10)}
+if(p.earring!=='none')for(const s of [-1,1]){if(p.earring==='hoop'){c.beginPath();c.ellipse(s*31,-70,4,6,0,0,Math.PI*2);c.strokeStyle='#f3cf78';c.lineWidth=2;c.stroke()}else if(p.earring==='star')poly([[s*31,-77],[s*34,-72],[s*38,-70],[s*33,-68],[s*31,-63],[s*29,-68],[s*25,-70],[s*29,-72]],'#f4cf81');else ellipse(s*31,-72,3,3,'#b4f4e1')}
+if(p.necklace!=='none'){c.beginPath();c.moveTo(-9,-64);c.quadraticCurveTo(0,-48,9,-64);c.strokeStyle='#e5c878';c.lineWidth=1.5;c.stroke();if(p.necklace==='crystal')poly([[0,-56],[4,-50],[0,-45],[-4,-50]],'#a3eee2');else if(p.necklace==='moon'){ellipse(0,-50,4,4,'#ead38a');ellipse(2,-52,3,3,outfit)}else{ellipse(0,-53,3,3,'#e6c96f');line(0,-50,0,-44,'#e6c96f',2);line(0,-44,4,-44,'#e6c96f',2)}}
+if(p.glasses!=='none'){for(const s of [-1,1]){c.beginPath();c.ellipse(s*12,-86,p.glasses==='round'?10:11,10,0,0,Math.PI*2);c.strokeStyle=p.glasses==='round'?'#d9b77d':'#684e40';c.lineWidth=p.glasses==='round'?2:4;c.stroke()}line(-2,-87,2,-87,'#c6b28c',2)}
+c.restore()}
