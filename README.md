@@ -20,6 +20,8 @@ No Windows, também é possível abrir `INICIAR-JOGO.cmd`. Acesse **http://127.0
 ## O jogo
 
 - **120 fases**, com 20 desafios em cada planeta.
+- **18 missões práticas**, distribuídas nas fases 1, 8 e 15 dos seis planetas: terminal simulado, montagem de arquitetura, regras de rede, política IAM e runbook de recuperação.
+- **Dicas de Luma nos laboratórios:** após tentativas incorretas, a orientação fica mais específica. Comandos e configurações são simulações, sem acesso ao computador ou a contas cloud.
 - **Exploração entre desafios:** encontre um portal, responda, converse com Luma sobre a descoberta e recolha fragmentos para abrir o próximo caminho.
 - **Personagens:** modelos feminino/masculino, 18 roupas, cabelos, tons de pele, olhos, sapatos e acessórios combináveis.
 - **Solo:** corrida contra Mimo, com três ritmos e placar independente dos prêmios.
@@ -34,6 +36,19 @@ No Windows, também é possível abrir `INICIAR-JOGO.cmd`. Acesse **http://127.0
 | Mist Valley | Redes e armazenamento | Verde e turquesa |
 | Nimbus Citadel | IAM e segurança | Violeta e lavanda |
 | Storm Haven | Resiliência e operações | Azul profundo e cinza |
+
+Cada planeta também tem uma mecânica de exploração:
+
+| Planeta | Entre os desafios |
+| --- | --- |
+| Planeta Raios | Pular para recolher energia de cristais elétricos |
+| Aurora Celeste | Girar hélices com E e alinhar as correntes de ar |
+| Clouds | Construir o caminho seguindo nuvens na ordem |
+| Mist Valley | Iluminar a neblina com E para encontrar fragmentos |
+| Nimbus Citadel | Recolher chaves e abrir fechaduras correspondentes com E |
+| Storm Haven | Ativar dois faróis antes de recuperar o farol central |
+
+Essas atividades abrem o próximo portal, sem criar pontos adicionais de prêmios. A conversa com Luma continua fazendo parte da jornada.
 
 ## Pontos e prêmios
 
@@ -74,6 +89,7 @@ Ou execute separadamente:
 ```sh
 node tests/app.test.mjs
 node tests/rooms.test.mjs
+node tests/practical.test.mjs
 ```
 
 Os testes usam bancos temporários e verificam campanha, exploração, saldo, resgates, aprovação, isolamento de contas, salas e robô.

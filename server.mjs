@@ -5,10 +5,11 @@ import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {randomBytes,createHash,scrypt as scryptCb,timingSafeEqual,createPublicKey,verify} from 'node:crypto';
 import {promisify} from 'node:util';
-import {worlds,questions,rewards} from './questions.mjs';
+import {worlds,questions as baseQuestions,rewards} from './questions.mjs';
+import {enrichQuestions,getPractical,publicPractical} from './practical.mjs';
 import {createSaml} from './saml.mjs';
 import {createPlay} from './play-server.mjs';
-const scrypt=promisify(scryptCb),base=dirname(fileURLToPath(import.meta.url));
+const scrypt=promisify(scryptCb),base=dirname(fileURLToPath(import.meta.url)),questions=enrichQuestions(baseQuestions);
 export async function createApp(options={}){
  const port=options.port??Number(process.env.PORT||4180),origin=options.origin||process.env.APP_ORIGIN||`http://127.0.0.1:${port}`,secure=origin.startsWith('https:'),rewardsMode=process.env.REWARDS_MODE==='demo'?'demo':'approval';
  const dataDir=options.dataDir||resolve(base,'data');await mkdir(dataDir,{recursive:true});
@@ -22,7 +23,8 @@ export async function createApp(options={}){
  CREATE TABLE IF NOT EXISTS config(key TEXT PRIMARY KEY,value TEXT);
  CREATE TABLE IF NOT EXISTS admins(uid TEXT PRIMARY KEY REFERENCES users(id));
  CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY,actor TEXT,action TEXT,target TEXT,created INTEGER);
- CREATE UNIQUE INDEX IF NOT EXISTS username_casefold ON users(lower(username));`);
+ CREATE UNIQUE INDEX IF NOT EXISTS username_casefold ON users(lower(username));
+ CREATE TABLE IF NOT EXISTS learning_attempts(uid TEXT,qid TEXT,wrong INTEGER DEFAULT 0,PRIMARY KEY(uid,qid));`);
  if(!db.prepare('SELECT value FROM config WHERE key=?').get('shuffle'))db.prepare('INSERT INTO config VALUES(?,?)').run('shuffle',randomBytes(32).toString('hex'));
  const shuffleSecret=db.prepare('SELECT value FROM config WHERE key=?').get('shuffle').value;
  const hash=s=>createHash('sha256').update(s).digest('hex'),random=()=>randomBytes(32).toString('base64url'),now=()=>Date.now();
@@ -61,11 +63,27 @@ export async function createApp(options={}){
  if(path==='/api/admin/decide'&&req.method==='POST'){const b=await body(req);if(!['approved','rejected','delivered'].includes(b.status))fail(400,'Decisão inválida.');db.exec('BEGIN IMMEDIATE');try{const r=db.prepare('SELECT * FROM redemptions WHERE id=?').get(b.id);if(!r||(b.status==='delivered'?r.status!=='approved':r.status!=='pending'))fail(409,'Esta solicitação já foi atualizada.');db.prepare('UPDATE redemptions SET status=? WHERE id=?').run(b.status,b.id);db.prepare('INSERT INTO audit(actor,action,target,created) VALUES(?,?,?,?)').run(user.id,b.status,b.id,now());db.exec('COMMIT');send(res,200,{ok:true});return}catch(e){db.exec('ROLLBACK');throw e}}fail(404,'Rota não encontrada.')}
  if(path==='/api/profile'&&req.method==='POST'){const b=await body(req),profile=cleanProfile(b.profile||{});if(!profile.name)fail(400,'Dê um nome ao seu personagem.');if(b.username){if(!usernameOK(b.username))fail(400,'Usuário inválido.');try{db.prepare('UPDATE users SET username=? WHERE id=?').run(b.username.trim(),user.id)}catch{fail(409,'Este usuário já existe.')}}db.prepare('UPDATE users SET profile=? WHERE id=?').run(JSON.stringify(profile),user.id);send(res,200,{user:getState(user.id)});return}
  if(path==='/api/world'&&req.method==='POST'){const b=await body(req);if(!worlds.some(w=>w.id===b.world))fail(400,'Mundo inválido.');db.prepare('UPDATE users SET world=? WHERE id=?').run(b.world,user.id);send(res,200,{user:getState(user.id)});return}
- if(path==='/api/mission'){const w=url.searchParams.get('world')||user.world;if(!worlds.some(a=>a.id===w))fail(400,'Mundo inválido.');const completed=getState(user.id).done,group=questions.filter(q=>q.world===w),requested=url.searchParams.get('id');let q=requested?group.find(q=>q.id===requested):group.find(q=>!completed.includes(q.id));if(!q){send(res,200,{complete:true});return}const next=group.find(q=>!completed.includes(q.id));if(!completed.includes(q.id)&&q.id!==next?.id)fail(403,'Conclua a fase anterior primeiro.');if(!completed.includes(q.id))game.assertReady(user.id,w);const shift=Buffer.from(hash(shuffleSecret+user.id+q.id),'hex')[0]%3;const choices=q.choices.map((_,i)=>q.choices[(i+shift)%3]);send(res,200,{question:{id:q.id,title:q.title,prompt:q.prompt,stage:q.stage,world:q.world,choices,review:completed.includes(q.id)}});return}
- if(path==='/api/answer'&&req.method==='POST'){const b=await body(req),q=questions.find(q=>q.id===b.id);if(!q||!Number.isInteger(b.answer)||b.answer<0||b.answer>2)fail(400,'Resposta inválida.');const s=getState(user.id),next=questions.find(a=>a.world===q.world&&!s.done.includes(a.id));if(!s.done.includes(q.id)&&next?.id!==q.id)fail(403,'Conclua a fase anterior primeiro.');if(!s.done.includes(q.id))game.assertReady(user.id,q.world);const shift=Buffer.from(hash(shuffleSecret+user.id+q.id),'hex')[0]%3,correct=(b.answer+shift)%3===q.correct;let earned=0;if(correct){const r=db.prepare('INSERT OR IGNORE INTO completed VALUES(?,?,?)').run(user.id,q.id,now());if(r.changes)earned=25}if(correct)game.correct(user.id,q,earned);send(res,200,{correct,earned,explanation:correct?q.explanation:'Ainda não. Revise o objetivo e tente outra alternativa.',user:getState(user.id)});return}
+ if(path==='/api/mission'){
+  const w=url.searchParams.get('world')||user.world;if(!worlds.some(a=>a.id===w))fail(400,'Mundo inválido.');
+  const completed=getState(user.id).done,group=questions.filter(q=>q.world===w),requested=url.searchParams.get('id');
+  const q=requested?group.find(q=>q.id===requested):group.find(q=>!completed.includes(q.id));if(!q){send(res,200,{complete:true});return}
+  const next=group.find(q=>!completed.includes(q.id));if(!completed.includes(q.id)&&q.id!==next?.id)fail(403,'Conclua a fase anterior primeiro.');if(!completed.includes(q.id))game.assertReady(user.id,w);
+  const activity=publicPractical(q.id),shift=Buffer.from(hash(shuffleSecret+user.id+q.id),'hex')[0]%3;
+  send(res,200,{question:{id:q.id,title:q.title,prompt:q.prompt,stage:q.stage,world:q.world,kind:activity?'practical':'quiz',activity:activity||undefined,choices:activity?undefined:q.choices.map((_,i)=>q.choices[(i+shift)%3]),review:completed.includes(q.id)}});return;
+ }
+ if(path==='/api/answer'&&req.method==='POST'){
+  const b=await body(req),q=questions.find(q=>q.id===b.id);if(!q)fail(400,'Resposta inválida.');
+  const practical=getPractical(q.id);if(!practical&&(!Number.isInteger(b.answer)||b.answer<0||b.answer>2))fail(400,'Resposta inválida.');
+  const s=getState(user.id),next=questions.find(a=>a.world===q.world&&!s.done.includes(a.id));if(!s.done.includes(q.id)&&next?.id!==q.id)fail(403,'Conclua a fase anterior primeiro.');if(!s.done.includes(q.id))game.assertReady(user.id,q.world);
+  const shift=Buffer.from(hash(shuffleSecret+user.id+q.id),'hex')[0]%3,checked=practical?practical.check(b.submission):null,correct=practical?checked.correct:(b.answer+shift)%3===q.correct;
+  let earned=0,hint;
+  if(correct){const r=db.prepare('INSERT OR IGNORE INTO completed VALUES(?,?,?)').run(user.id,q.id,now());if(r.changes)earned=25;game.correct(user.id,q,earned)}
+  else{db.prepare('INSERT INTO learning_attempts(uid,qid,wrong) VALUES(?,?,1) ON CONFLICT(uid,qid) DO UPDATE SET wrong=wrong+1').run(user.id,q.id);const wrong=db.prepare('SELECT wrong FROM learning_attempts WHERE uid=? AND qid=?').get(user.id,q.id).wrong;if(practical&&wrong>=2)hint=practical.hints[Math.min(practical.hints.length-1,Math.floor(wrong/2)-1)]}
+  send(res,200,{correct,earned,explanation:correct?q.explanation:checked?.feedback||'Ainda não. Revise o objetivo e tente outra alternativa.',hint,labOutput:checked?.output,user:getState(user.id)});return;
+ }
  if(path==='/api/redeem'&&req.method==='POST'){const b=await body(req),r=rewards.find(r=>r.id===b.reward);if(!r)fail(400,'Prêmio inválido.');db.exec('BEGIN IMMEDIATE');try{const s=getState(user.id);if(s.claims.some(c=>c.reward===r.id&&!['rejected','cancelled'].includes(c.status)))fail(409,'Você já solicitou este prêmio.');if(s.points<r.cost)fail(400,'Pontos insuficientes. Continue a campanha.');const id=randomBytes(6).toString('hex').toUpperCase();db.prepare('INSERT INTO redemptions VALUES(?,?,?,?,?,?)').run(id,user.id,r.id,r.cost,rewardsMode==='demo'?'demo':'pending',now());db.exec('COMMIT');send(res,201,{user:getState(user.id),receipt:id});return}catch(e){db.exec('ROLLBACK');throw e}}
  if(path==='/api/cancel'&&req.method==='POST'){const b=await body(req),r=db.prepare('SELECT * FROM redemptions WHERE id=? AND uid=?').get(b.id,user.id);if(!r||!['demo','pending'].includes(r.status))fail(400,'Esta solicitação não pode ser cancelada.');db.prepare("UPDATE redemptions SET status='cancelled' WHERE id=? AND uid=?").run(r.id,user.id);send(res,200,{user:getState(user.id)});return}fail(404,'Rota não encontrada.')}
- const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/avatar.js':'avatar.js','/play-client.js':'play-client.js','/style.css':'style.css'};const f=files[path];if(!f)fail(404,'Arquivo não encontrado.');const content=await readFile(resolve(base,'public',f));res.writeHead(200,{'Content-Type':f.endsWith('.js')?'application/javascript; charset=utf-8':f.endsWith('.css')?'text/css; charset=utf-8':'text/html; charset=utf-8'});res.end(content);
+ const files={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/avatar.js':'avatar.js','/play-client.js':'play-client.js','/practical-ui.js':'practical-ui.js','/world-mechanics.js':'world-mechanics.js','/style.css':'style.css'};const f=files[path];if(!f)fail(404,'Arquivo não encontrado.');const content=await readFile(resolve(base,'public',f));res.writeHead(200,{'Content-Type':f.endsWith('.js')?'application/javascript; charset=utf-8':f.endsWith('.css')?'text/css; charset=utf-8':'text/html; charset=utf-8'});res.end(content);
  }catch(e){if(!res.headersSent)send(res,e.status||500,{error:e.status?e.message:'Não foi possível concluir. Tente novamente.'});else res.end()}});
  server.requestTimeout=15000;server.headersTimeout=10000;
  return {server,db,origin,close:()=>new Promise(r=>server.close(()=>{db.close();r()}))};
